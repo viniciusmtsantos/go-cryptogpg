@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
@@ -76,8 +77,8 @@ func KeyPairWriter(filePath, name, comment, email, passphrase string, expiration
 	// }
 
 	// if passphrase != "" {
-	// 	if entity.PrivateKey != nil {
-	// 		err = entity.PrivateKey.Encrypt([]byte(passphrase))
+	// 	if key.GetEntity().PrivateKey != nil {
+	// 		err = key.GetEntity().EncryptPrivateKeys([]byte(passphrase), config)
 	// 		if err != nil {
 	// 			return err
 	// 		}
@@ -85,17 +86,6 @@ func KeyPairWriter(filePath, name, comment, email, passphrase string, expiration
 	// 		return errors.New("chave privada não está disponível")
 	// 	}
 	// }
-
-	if passphrase != "" {
-		if key.GetEntity().PrivateKey != nil {
-			err = key.GetEntity().EncryptPrivateKeys([]byte(passphrase), config)
-			if err != nil {
-				return err
-			}
-		} else {
-			return errors.New("chave privada não está disponível")
-		}
-	}
 
 	// Escrita da chave pública em um arquivo
 	publicKeyFile, err := os.Create(fmt.Sprintf("%s_public.asc", filePath))
@@ -142,7 +132,7 @@ func KeyPairWriter(filePath, name, comment, email, passphrase string, expiration
 		return err
 	}
 
-	fmt.Printf("uid: \"%s (%s) <%s>\"\n", name, comment, email)
+	fmt.Printf("uid: \"%s (%s) <%s>\"\n", strings.TrimSpace(name), strings.TrimSpace(comment), strings.TrimSpace(email))
 	if expirationDate != nil {
 		fmt.Printf("Chaves pública e privada criadas e assinadas. %s_public.asc e %s_SECRET.asc [expires: %s]\n", filePath, filePath, expirationDate.Format("02/01/2006 15:04:05"))
 	} else {

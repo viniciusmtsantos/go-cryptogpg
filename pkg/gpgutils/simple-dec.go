@@ -37,6 +37,15 @@ func DecFile(fileToDecrypt, secretKeyring, fileOutputDir string) {
 		fmt.Println("Erro ao criar o escritor de texto criptografado:", err)
 	}
 
+	// Verificar a passphrase
+	for _, entity := range readArmored {
+		err := entity.PrivateKey.Decrypt([]byte("teste123"))
+		if err != nil {
+			fmt.Println("Falha na verificação da passphrase:", err)
+			return
+		}
+	}
+
 	decryptedMessage, err := openpgp.ReadMessage(decryptedWriter.Body, readArmored, nil, nil)
 	if err != nil {
 		fmt.Println("Erro ao descriptografar a mensagem:", err)

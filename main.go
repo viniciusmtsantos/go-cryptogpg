@@ -26,10 +26,7 @@ func main() {
 		expirationTime  time.Time
 	)
 
-	// fmt.Print("A chave é valida por? (0) ")
-	// fmt.Scanln(&expirationInput)
-	// exp, _ := parseDuracaoChave(expirationInput)
-	// gpgutils.KeyPairWriter("filePath", "name", "comment", "email@email", "teste", &exp, 2048)
+	// gpgutils.KeyPairWriter("filePath", "name", "comment", "email@email", "teste", nil, 2048)
 
 	var secretKeyring, publicKeyring, keyOutputDir, fileOutputDir, fileToEncrypt, fileToDecrypt string
 	// flags da aplicação
@@ -166,7 +163,7 @@ func main() {
 		email = strings.TrimSpace(email)
 
 		for keySize != 1024 && keySize != 2048 && keySize != 4096 {
-			fmt.Println("Numero de bits para tamanho das chaves: [1024 bits] [2048 bits] [4096 bits]")
+			fmt.Println("Numero de bits para tamanho das chaves:\n[1024 bits] [2048 bits] [4096 bits]")
 			fmt.Print("Digite o tamanho (2048): ")
 			fmt.Scanln(&keySize)
 			if keySize == 0 {
