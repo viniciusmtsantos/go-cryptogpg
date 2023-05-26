@@ -1,4 +1,4 @@
-module stcpgpg
+module gocryptopgp
 
 go 1.20
 

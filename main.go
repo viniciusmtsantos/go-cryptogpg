@@ -11,34 +11,34 @@ import (
 	"strings"
 	"time"
 
-	"stcpgpg/pkg/gpgutils"
+	"gocryptopgp/pkg/gpgutils"
 )
 
 const (
-	prefix      = "keys"
-	pubkey      = "keys_public.asc"
-	privkey     = "keys_SECRET.asc"
-	filePath    = "file-tests/teste.txt"
-	encFilePath = "file-tests/teste.txt.gpg"
+	// 	prefix      = "keys"
+	pubkey = "keys/testando-com-pass_public.asc"
+	// 	privkey     = "keys_SECRET.asc"
+	filePath = "file-tests/teste.txt"
 
-	name       = "teste da silva"
-	comment    = "comentario do teste"
-	email      = "teste@teste"
-	keySize    = 2048
-	passphrase = "teste"
+// 	encFilePath = "file-tests/teste.txt.gpg"
+
+// name       = "teste da silva"
+// comment    = "comentario do teste"
+// email      = "teste@teste"
+// keySize    = 2048
+// passphrase = "teste"
 )
 
 func main() {
 	// gpgutils.KeyPairWriter(prefix, name, comment, email, passphrase, nil, keySize)
-	// gpgutils.EncryptMessageArmored(pubkey, filePath)
+	// err := gpgutils.EncryptMessageArmored(pubkey, filePath)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 	// gpgutils.DecryptMessageArmored(privkey, encFilePath, "teste")
 	// gpgutils.EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath)
-	err := gpgutils.DecryptVerifyMessageArmored(pubkey, privkey, passphrase, encFilePath)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	os.Exit(1)
+	// err := gpgutils.DecryptVerifyMessageArmored(pubkey, privkey, passphrase, encFilePath)
+	// os.Exit(1)
 
 	var (
 		filePath        string
@@ -53,8 +53,8 @@ func main() {
 
 	var secretKey, publicKey, keyOutputDir, fileToEncrypt, fileToDecrypt string
 	// flags da aplicação
-	flag.StringVar(&secretKey, "secretKey", "keys/Vinicius Matheus Santos_0x28352859_SECRET.asc", "[Directory path to configs app]")
-	flag.StringVar(&publicKey, "publicKey", "", "[Directory path to backup]")
+	flag.StringVar(&secretKey, "secretKey", "", "[Directory path of private key]")
+	flag.StringVar(&publicKey, "publicKey", "", "[Directory path to public key]")
 
 	flag.Parse()
 
@@ -82,16 +82,25 @@ func main() {
 		fs.Parse(flag.Args()[1:])
 
 		if *sygn {
+
+			if secretKey == "" {
+				fmt.Println("Error: -secretKey is required")
+				usage()
+				return
+			}
+
 			for passphrase == "" {
-				fmt.Print("Digite a passphrase para assinatura: ")
+				fmt.Print("Passphrase para assinatura: ")
 				fmt.Scanln(&passphrase)
 			}
+
 			err := gpgutils.EncryptSignMessageArmored(publicKey, secretKey, passphrase, fileToEncrypt)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
+
 		} else {
-			err := gpgutils.EncryptMessageArmored(publicKey, filePath)
+			err := gpgutils.EncryptMessageArmored(publicKey, fileToEncrypt)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -113,8 +122,15 @@ func main() {
 		fs.Parse(flag.Args()[1:])
 
 		if *verify {
+
+			if publicKey == "" {
+				fmt.Println("Error: -publicKey is required")
+				usage()
+				return
+			}
+
 			for passphrase == "" {
-				fmt.Print("Digite a passphrase: ")
+				fmt.Print("Passphrase: ")
 				fmt.Scanln(&passphrase)
 			}
 			err := gpgutils.DecryptVerifyMessageArmored(publicKey, secretKey, passphrase, fileToDecrypt)
@@ -122,7 +138,9 @@ func main() {
 				log.Fatal(err.Error())
 			}
 		} else {
-			err := gpgutils.DecryptMessageArmored(secretKey, filePath, passphrase)
+			fmt.Print("Passphrase (''): ")
+			fmt.Scanln(&passphrase)
+			err := gpgutils.DecryptMessageArmored(secretKey, fileToDecrypt, passphrase)
 			if err != nil {
 				log.Fatal(err.Error())
 			}

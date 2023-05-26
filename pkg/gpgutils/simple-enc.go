@@ -47,7 +47,7 @@ func EncryptMessageArmored(key, filePath string) error {
 		return err
 	}
 
-	fmt.Println("Tá Encriptado fi")
+	fmt.Println("Arquivo criptografado com sucesso!")
 
 	return nil
 }
@@ -91,5 +91,6 @@ func EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath string) err
 		return err
 	}
 
+	fmt.Println("Arquivo criptografado com sucesso!")
 	return nil
 }

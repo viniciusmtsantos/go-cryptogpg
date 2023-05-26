@@ -9,8 +9,6 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/helper"
 )
 
-/////////////////////// DECRIPT /////////////////////////////////////
-
 func DecryptMessageArmored(key, filePath, passphrase string) error {
 	keyBytesContent, err := ioutil.ReadFile(key)
 	if err != nil {
@@ -43,7 +41,7 @@ func DecryptMessageArmored(key, filePath, passphrase string) error {
 		return err
 	}
 
-	fmt.Println("Decriptado fi")
+	fmt.Println("Arquivo descriptografado com sucesso!")
 
 	return nil
 }
@@ -87,7 +85,7 @@ func DecryptVerifyMessageArmored(pubkey, privkey, passphrase, filePath string) e
 		return err
 	}
 
+	fmt.Println("Arquivo descriptografado com sucesso!")
+
 	return nil
 }
-
-/////////////////////// ENCRIPT /////////////////////////////////////
