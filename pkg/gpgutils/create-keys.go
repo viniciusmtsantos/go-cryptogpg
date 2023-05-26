@@ -8,11 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/ProtonMail/go-crypto/openpgp/armor"
-	"github.com/ProtonMail/go-crypto/openpgp/packet"
-
-	opengpg "github.com/ProtonMail/gopenpgp/v2/crypto"
+	openpgp "github.com/ProtonMail/go-crypto/openpgp"
+	packet "github.com/ProtonMail/go-crypto/openpgp/packet"
+	openpgpcrypto "github.com/ProtonMail/gopenpgp/v2/crypto"
 )
 
 func KeyPairWriter(filePath, name, comment, email, passphrase string, expirationDate *time.Time, keySize int) error {
@@ -50,7 +48,7 @@ func KeyPairWriter(filePath, name, comment, email, passphrase string, expiration
 		return errors.New("gopenpgp: error in generating private key")
 	}
 
-	key, err := opengpg.NewKeyFromEntity(entity)
+	key, err := openpgpcrypto.NewKeyFromEntity(entity)
 	if err != nil {
 		return errors.New("gopenpgp: unable to generate new key")
 	}
@@ -60,32 +58,16 @@ func KeyPairWriter(filePath, name, comment, email, passphrase string, expiration
 	if err != nil {
 		return errors.New("gopenpgp: unable to lock new key")
 	}
-	locked.Armor()
 
-	for _, id := range key.GetEntity().Identities {
-		err := id.SelfSignature.SignUserId(id.UserId.Id, key.GetEntity().PrimaryKey, key.GetEntity().PrivateKey, config)
-		if err != nil {
-			return err
-		}
+	armoredpriv, err := locked.Armor()
+	if err != nil {
+		return err
 	}
 
-	// for _, id := range entity.Identities {
-	// 	err := id.SelfSignature.SignUserId(id.UserId.Id, entity.PrimaryKey, entity.PrivateKey, config)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
-
-	// if passphrase != "" {
-	// 	if key.GetEntity().PrivateKey != nil {
-	// 		err = key.GetEntity().EncryptPrivateKeys([]byte(passphrase), config)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	} else {
-	// 		return errors.New("chave privada não está disponível")
-	// 	}
-	// }
+	armoredpub, err := key.GetArmoredPublicKey()
+	if err != nil {
+		return err
+	}
 
 	// Escrita da chave pública em um arquivo
 	publicKeyFile, err := os.Create(fmt.Sprintf("%s_public.asc", filePath))
@@ -94,17 +76,7 @@ func KeyPairWriter(filePath, name, comment, email, passphrase string, expiration
 	}
 	defer publicKeyFile.Close()
 
-	publicKeyWriter, err := armor.Encode(publicKeyFile, openpgp.PublicKeyType, nil)
-	if err != nil {
-		return err
-	}
-	defer publicKeyWriter.Close()
-
-	// err = entity.Serialize(publicKeyWriter)
-	// if err != nil {
-	// 	return err
-	// }
-	err = key.GetEntity().Serialize(publicKeyWriter)
+	_, err = publicKeyFile.Write([]byte(armoredpub))
 	if err != nil {
 		return err
 	}
@@ -115,19 +87,7 @@ func KeyPairWriter(filePath, name, comment, email, passphrase string, expiration
 		return err
 	}
 	defer privateKeyFile.Close()
-
-	privateKeyWriter, err := armor.Encode(privateKeyFile, openpgp.PrivateKeyType, nil)
-	if err != nil {
-		return err
-	}
-	defer privateKeyWriter.Close()
-
-	// err = entity.SerializePrivate(privateKeyWriter, config)
-	// if err != nil {
-	// 	return err
-	// }
-
-	err = key.GetEntity().SerializePrivate(privateKeyWriter, config)
+	_, err = privateKeyFile.Write([]byte(armoredpriv))
 	if err != nil {
 		return err
 	}

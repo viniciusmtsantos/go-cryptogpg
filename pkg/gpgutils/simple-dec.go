@@ -1,210 +1,93 @@
 package gpgutils
 
 import (
-	"bytes"
-	"compress/gzip"
-	"encoding/base64"
 	"fmt"
-	"io"
-	"log"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
-	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/ProtonMail/gopenpgp/v2/helper"
 )
 
-func DecFile(fileToDecrypt, secretKeyring, fileOutputDir string) {
-	encryptedFile, err := os.Open(fileToDecrypt)
+/////////////////////// DECRIPT /////////////////////////////////////
+
+func DecryptMessageArmored(key, filePath, passphrase string) error {
+	keyBytesContent, err := ioutil.ReadFile(key)
 	if err != nil {
-		fmt.Println("Erro ao abrir o arquivo de entrada:", err)
+		fmt.Println("Erro ao ler o arquivo:", err)
+		return err
 	}
-	defer encryptedFile.Close()
+	keyStringContent := string(keyBytesContent)
 
-	privateKeyASC, err := os.Open(secretKeyring)
+	fileBytesContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Erro ao ler o arquivo:", err)
+		return err
 	}
-	defer privateKeyASC.Close()
+	fileStringContent := string(fileBytesContent)
 
-	readArmored, err := openpgp.ReadArmoredKeyRing(privateKeyASC)
+	armor, err := helper.DecryptMessageArmored(keyStringContent, []byte(passphrase), fileStringContent)
 	if err != nil {
-		fmt.Println("Erro ao ler a chave privada do destinatário:", err)
+		return err
 	}
 
-	decryptedWriter, err := armor.Decode(encryptedFile)
+	// Escrita da chave pública em um arquivo
+	publicKeyFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "decriptado.txt"))
 	if err != nil {
-		fmt.Println("Erro ao criar o escritor de texto criptografado:", err)
+		return err
 	}
+	defer publicKeyFile.Close()
 
-	// Verificar a passphrase
-	for _, entity := range readArmored {
-		err := entity.PrivateKey.Decrypt([]byte("teste123"))
-		if err != nil {
-			fmt.Println("Falha na verificação da passphrase:", err)
-			return
-		}
-	}
-
-	decryptedMessage, err := openpgp.ReadMessage(decryptedWriter.Body, readArmored, nil, nil)
+	_, err = publicKeyFile.Write([]byte(armor))
 	if err != nil {
-		fmt.Println("Erro ao descriptografar a mensagem:", err)
+		return err
 	}
 
-	decryptedFile, err := os.Create(filepath.Join(fileOutputDir, "decrypted.txt"))
-	if err != nil {
-		fmt.Println("Erro ao criar o arquivo de saída:", err)
-	}
-	defer decryptedFile.Close()
+	fmt.Println("Decriptado fi")
 
-	_, err = io.Copy(decryptedFile, decryptedMessage.UnverifiedBody)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// decryptedBytes, err := io.ReadAll(decryptedMessage.UnverifiedBody)
-	// if err != nil {
-	// 	fmt.Println("Erro ao ler a mensagem descriptografada:", err)
-	// }
-
-	// fmt.Print(string(decryptedBytes))
-
-	// _, err = decryptedFile.Write(decryptedBytes)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	fmt.Println("Arquivo descriptografado com sucesso!")
-}
-
-func DecryptFile(publicKeyring, secretKeyring string, inputFile, outputFile string, bits int) error {
-	// pubKey := DecodePublicKey(publicKeyring)
-	// privKey := DecodePrivateKey(secretKeyring)
-
-	// entity := CreateEntityFromKeys(pubKey, privKey, bits)
-
-	input, err := os.Open(inputFile)
-	if err != nil {
-		return fmt.Errorf("Error opening input file: %s", err)
-	}
-	defer input.Close()
-
-	output, err := os.Create(outputFile)
-	if err != nil {
-		return fmt.Errorf("Error creating output file: %s", err)
-	}
-	defer output.Close()
-
-	block, err := armor.Decode(input)
-	if err != nil {
-		return fmt.Errorf("Error reading OpenPGP Armor: %s", err)
-	}
-
-	if block.Type != "Message" {
-		return fmt.Errorf("Invalid message type")
-	}
-
-	var entityList openpgp.EntityList
-	// entityList = append(entityList, entity)
-
-	md, err := openpgp.ReadMessage(block.Body, entityList, nil, nil)
-	if err != nil {
-		return fmt.Errorf("Error reading message: %s", err)
-	}
-
-	compressed, err := gzip.NewReader(md.UnverifiedBody)
-	if err != nil {
-		return fmt.Errorf("Invalid compression level: %s", err)
-	}
-	defer compressed.Close()
-
-	n, err := io.Copy(output, compressed)
-	if err != nil {
-		return fmt.Errorf("Error reading encrypted file: %s", err)
-	}
-
-	fmt.Printf("Decrypted %d bytes\n", n)
 	return nil
 }
 
-func DecMessage(encryptedMessage *bytes.Buffer) error {
-	privateKeyASC, err := os.Open("D:/OneDrive - Riversoft Integração e Desenvolvimento de Software Ltda/Documentos/Desenv/riversoft/stcpgpg/keys/Vinicius Matheus Santos_0x28352859_SECRET.asc")
+func DecryptVerifyMessageArmored(pubkey, privkey, passphrase, filePath string) error {
+	pubKeyBytesContent, err := ioutil.ReadFile(pubkey)
 	if err != nil {
-		fmt.Println(err)
-		return nil
+		fmt.Println("Erro ao ler o arquivo:", err)
+		return err
 	}
-	defer privateKeyASC.Close()
+	pubKeyStringContent := string(pubKeyBytesContent)
 
-	readArmoredKey, err := openpgp.ReadArmoredKeyRing(privateKeyASC)
+	privKeyBytesContent, err := ioutil.ReadFile(privkey)
 	if err != nil {
-		fmt.Println("Erro ao ler a chave privada do destinatário:", err)
-		return nil
+		fmt.Println("Erro ao ler o arquivo:", err)
+		return err
 	}
+	privKeyStringContent := string(privKeyBytesContent)
 
-	decryptedMessage, err := openpgp.ReadMessage(encryptedMessage, readArmoredKey, nil, nil)
+	fileBytesContent, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		fmt.Println("Erro ao descriptografar a mensagem:", err)
-		return nil
+		fmt.Println("Erro ao ler o arquivo:", err)
+		return err
 	}
+	fileStringContent := string(fileBytesContent)
 
-	decryptedBytes, err := io.ReadAll(decryptedMessage.UnverifiedBody)
+	armor, err := helper.DecryptVerifyMessageArmored(pubKeyStringContent, privKeyStringContent, []byte(passphrase), fileStringContent)
 	if err != nil {
-		fmt.Println("Erro ao ler a mensagem descriptografada:", err)
-		return nil
+		return err
 	}
 
-	fmt.Println("Mensagem descript:", string(decryptedBytes))
+	// Escrita da chave pública em um arquivo
+	publicKeyFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "decriptado.txt"))
+	if err != nil {
+		return err
+	}
+	defer publicKeyFile.Close()
+
+	_, err = publicKeyFile.Write([]byte(armor))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func DecTest(encString, secretKeyring string) (string, error) {
-	fmt.Println("Secret Keyring:", secretKeyring)
-	// fmt.Println("Passphrase:", passphrase)
-
-	// init some vars
-	// var entity *openpgp.Entity
-	var entityList openpgp.EntityList
-
-	// Open the private key file
-	keyringFileBuffer, err := os.Open(secretKeyring)
-	if err != nil {
-		return "", err
-	}
-	defer keyringFileBuffer.Close()
-	entityList, err = openpgp.ReadArmoredKeyRing(keyringFileBuffer)
-	if err != nil {
-		return "", err
-	}
-	// entity = entityList[0]
-
-	// Get the passphrase and read the private key.
-	// Have not touched the encrypted string yet
-	// passphraseByte := []byte(passphrase)
-	// fmt.Println("Decrypting private key using passphrase")
-	// entity.PrivateKey.Decrypt(passphraseByte)
-	// for _, subkey := range entity.Subkeys {
-	// 	subkey.PrivateKey.Decrypt(passphraseByte)
-	// }
-	// fmt.Println("Finished decrypting private key using passphrase")
-
-	// Decode the base64 string
-	dec, err := base64.StdEncoding.DecodeString(encString)
-	if err != nil {
-		return "", err
-	}
-
-	// Decrypt it with the contents of the private key
-	md, err := openpgp.ReadMessage(bytes.NewBuffer(dec), entityList, nil, nil)
-	if err != nil {
-		return "", err
-	}
-	bytes, err := io.ReadAll(md.UnverifiedBody)
-	if err != nil {
-		return "", err
-	}
-	decStr := string(bytes)
-
-	log.Println("Decrypted Secret:", decStr)
-
-	return decStr, nil
-}
+/////////////////////// ENCRIPT /////////////////////////////////////

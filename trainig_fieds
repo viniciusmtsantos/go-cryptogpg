@@ -1,0 +1,184 @@
+////////////////////////////// DEC /////////////////////////
+
+func DecFile(fileToDecrypt, secretKeyring, fileOutputDir string) {
+	encryptedFile, err := os.Open(fileToDecrypt)
+	if err != nil {
+		fmt.Println("Erro ao abrir o arquivo de entrada:", err)
+	}
+	defer encryptedFile.Close()
+
+	privateKeyASC, err := os.Open(secretKeyring)
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer privateKeyASC.Close()
+
+	readArmored, err := openpgp.ReadArmoredKeyRing(privateKeyASC)
+	if err != nil {
+		fmt.Println("Erro ao ler a chave privada do destinatário:", err)
+	}
+
+	decryptedWriter, err := armor.Decode(encryptedFile)
+	if err != nil {
+		fmt.Println("Erro ao criar o escritor de texto criptografado:", err)
+	}
+
+	// Verificar a passphrase
+	for _, entity := range readArmored {
+		err := entity.PrivateKey.Decrypt([]byte("teste123"))
+		if err != nil {
+			fmt.Println("Falha na verificação da passphrase:", err)
+			return
+		}
+	}
+
+	decryptedMessage, err := openpgp.ReadMessage(decryptedWriter.Body, readArmored, nil, nil)
+	if err != nil {
+		fmt.Println("Erro ao descriptografar a mensagem:", err)
+	}
+
+	decryptedFile, err := os.Create(filepath.Join(fileOutputDir, "decrypted.txt"))
+	if err != nil {
+		fmt.Println("Erro ao criar o arquivo de saída:", err)
+	}
+	defer decryptedFile.Close()
+
+	_, err = io.Copy(decryptedFile, decryptedMessage.UnverifiedBody)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Arquivo descriptografado com sucesso!")
+}
+
+func DecMessage(encryptedMessage *bytes.Buffer) error {
+	privateKeyASC, err := os.Open("D:/OneDrive - Riversoft Integração e Desenvolvimento de Software Ltda/Documentos/Desenv/riversoft/stcpgpg/keys/Vinicius Matheus Santos_0x28352859_SECRET.asc")
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	defer privateKeyASC.Close()
+
+	readArmoredKey, err := openpgp.ReadArmoredKeyRing(privateKeyASC)
+	if err != nil {
+		fmt.Println("Erro ao ler a chave privada do destinatário:", err)
+		return nil
+	}
+
+	decryptedMessage, err := openpgp.ReadMessage(encryptedMessage, readArmoredKey, nil, nil)
+	if err != nil {
+		fmt.Println("Erro ao descriptografar a mensagem:", err)
+		return nil
+	}
+
+	decryptedBytes, err := io.ReadAll(decryptedMessage.UnverifiedBody)
+	if err != nil {
+		fmt.Println("Erro ao ler a mensagem descriptografada:", err)
+		return nil
+	}
+
+	fmt.Println("Mensagem descript:", string(decryptedBytes))
+	return nil
+}
+
+////////////////////////////// ENC /////////////////////////
+
+func EncFile(fileToEncrypt, publicKeyring, fileOutputDir string) {
+	fileToEnc, err := os.Open(fileToEncrypt)
+	if err != nil {
+		fmt.Println("Erro ao abrir o arquivo de entrada:", err)
+		return
+	}
+	defer fileToEnc.Close()
+
+	// Ler a chave pública do destinatário
+	publicKeyASC, err := os.Open(publicKeyring)
+	if err != nil {
+		fmt.Println("Erro ao abrir a chave pública do destinatário:", err)
+		return
+	}
+	defer publicKeyASC.Close()
+
+	// Ler o conteúdo do arquivo original
+	var fileContent bytes.Buffer
+	_, err = io.Copy(&fileContent, fileToEnc)
+	if err != nil {
+		fmt.Println("Erro ao ler o conteúdo do arquivo de entrada:", err)
+		return
+	}
+
+	// Criar o arquivo criptografado
+	encryptedFile, err := os.Create(filepath.Join(fileOutputDir, "encrypted.gpg"))
+	if err != nil {
+		fmt.Println("Erro ao criar o arquivo de saída:", err)
+		return
+	}
+	defer encryptedFile.Close()
+
+	// Criar o escritor de texto criptografado
+	encryptedWriter, err := armor.Encode(encryptedFile, "PGP MESSAGE", nil)
+	if err != nil {
+		fmt.Println("Erro ao criar o escritor de texto criptografado:", err)
+		return
+	}
+	defer encryptedWriter.Close()
+
+	// Obter o anel de chaves do destinatário
+	readArmored, err := openpgp.ReadArmoredKeyRing(publicKeyASC)
+	if err != nil {
+		fmt.Println("Erro ao ler o anel de chaves do destinatário:", err)
+		return
+	}
+
+	// Criar a entidade de escrita de texto criptografado
+	plaintext, err := openpgp.Encrypt(encryptedWriter, readArmored, nil, nil, nil)
+	if err != nil {
+		fmt.Println("Erro ao criar a entidade de escrita de texto criptografado:", err)
+		return
+	}
+
+	// Escrever o conteúdo do arquivo original no arquivo criptografado
+	_, err = io.Copy(plaintext, &fileContent)
+	if err != nil {
+		fmt.Println("Erro ao escrever o conteúdo criptografado:", err)
+		return
+	}
+
+	// Fechar a entidade de escrita de texto criptografado
+	err = plaintext.Close()
+	if err != nil {
+		fmt.Println("Erro ao fechar a entidade de escrita de texto criptografado:", err)
+		return
+	}
+
+	fmt.Println("Arquivo criptografado com sucesso!")
+}
+
+func EncMessage() (*bytes.Buffer, error) {
+	message := []byte("Agora deu bom")
+	encryptedMessage := new(bytes.Buffer)
+
+	publicKeyASC, err := os.Open("D:/OneDrive - Riversoft Integração e Desenvolvimento de Software Ltda/Documentos/Desenv/riversoft/stcpgpg/keys/Vinicius Matheus Santos_0x28352859_public.asc")
+	if err != nil {
+		fmt.Println(err)
+		return nil, nil
+	}
+	defer publicKeyASC.Close()
+
+	readArmoredKey, err := openpgp.ReadArmoredKeyRing(publicKeyASC)
+	if err != nil {
+		fmt.Println("Erro ao ler a chave pública do destinatário:", err)
+		return nil, nil
+	}
+
+	plaintext, err := openpgp.Encrypt(encryptedMessage, readArmoredKey, nil, nil, nil)
+	if err != nil {
+		fmt.Println("Erro ao criptografar a mensagem:", err)
+		return nil, nil
+	}
+	plaintext.Write(message)
+	plaintext.Close()
+
+	fmt.Println("Mensagem cript:", encryptedMessage.String())
+	return encryptedMessage, nil
+}

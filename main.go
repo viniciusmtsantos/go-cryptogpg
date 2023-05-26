@@ -14,7 +14,32 @@ import (
 	"stcpgpg/pkg/gpgutils"
 )
 
+const (
+	prefix      = "keys"
+	pubkey      = "keys_public.asc"
+	privkey     = "keys_SECRET.asc"
+	filePath    = "file-tests/teste.txt"
+	encFilePath = "file-tests/teste.txt.gpg"
+
+	name       = "teste da silva"
+	comment    = "comentario do teste"
+	email      = "teste@teste"
+	keySize    = 2048
+	passphrase = "teste"
+)
+
 func main() {
+	// gpgutils.KeyPairWriter(prefix, name, comment, email, passphrase, nil, keySize)
+	// gpgutils.EncryptMessageArmored(pubkey, filePath)
+	// gpgutils.DecryptMessageArmored(privkey, encFilePath, "teste")
+	// gpgutils.EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath)
+	err := gpgutils.DecryptVerifyMessageArmored(pubkey, privkey, passphrase, encFilePath)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	os.Exit(1)
+
 	var (
 		filePath        string
 		name            string
@@ -26,12 +51,10 @@ func main() {
 		expirationTime  time.Time
 	)
 
-	// gpgutils.KeyPairWriter("filePath", "name", "comment", "email@email", "teste", nil, 2048)
-
-	var secretKeyring, publicKeyring, keyOutputDir, fileOutputDir, fileToEncrypt, fileToDecrypt string
+	var secretKey, publicKey, keyOutputDir, fileToEncrypt, fileToDecrypt string
 	// flags da aplicação
-	flag.StringVar(&secretKeyring, "secretKeyring", "keys/Vinicius Matheus Santos_0x28352859_SECRET.asc", "[Directory path to configs app]")
-	flag.StringVar(&publicKeyring, "publicKeyring", "", "[Directory path to backup]")
+	flag.StringVar(&secretKey, "secretKey", "keys/Vinicius Matheus Santos_0x28352859_SECRET.asc", "[Directory path to configs app]")
+	flag.StringVar(&publicKey, "publicKey", "", "[Directory path to backup]")
 
 	flag.Parse()
 
@@ -45,8 +68,8 @@ func main() {
 	switch {
 	case flag.Arg(0) == "encrypt":
 
-		if publicKeyring == "" {
-			fmt.Println("Error: -publicKeyring is required")
+		if publicKey == "" {
+			fmt.Println("Error: -publicKey is required")
 			usage()
 			return
 		}
@@ -54,22 +77,30 @@ func main() {
 		fs := flag.NewFlagSet("encrypt [flags]", flag.ExitOnError)
 
 		fs.StringVar(&fileToEncrypt, "file", "", "[File path to encrypt]")
-		fs.StringVar(&fileOutputDir, "d", "", "[Directory path to save the encrypt file]")
+		sygn := fs.Bool("sygn", false, "[Declare passprhase to sygn encrypted file]")
 
 		fs.Parse(flag.Args()[1:])
 
-		// if fs.NArg() == 0 {
-		// 	usage()
-		// 	return
-		// }
-
-		gpgutils.EncFile(fileToEncrypt, publicKeyring, fileOutputDir)
-		// gpgutils.EncryptFile("vinicius_public.gpg", "vinicius_SECRET.gpg", 2048, "file-tests/teste.txt", "./teste.gpg")
+		if *sygn {
+			for passphrase == "" {
+				fmt.Print("Digite a passphrase para assinatura: ")
+				fmt.Scanln(&passphrase)
+			}
+			err := gpgutils.EncryptSignMessageArmored(publicKey, secretKey, passphrase, fileToEncrypt)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		} else {
+			err := gpgutils.EncryptMessageArmored(publicKey, filePath)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		}
 
 	case flag.Arg(0) == "decrypt":
 
-		if secretKeyring == "" {
-			fmt.Println("Error: -secretKeyring is required")
+		if secretKey == "" {
+			fmt.Println("Error: -secretKey is required")
 			usage()
 			return
 		}
@@ -77,11 +108,25 @@ func main() {
 		fs := flag.NewFlagSet("decrypt [flags]", flag.ExitOnError)
 
 		fs.StringVar(&fileToDecrypt, "file", "", "[File path to decrypt]")
-		fs.StringVar(&fileOutputDir, "d", "", "[Directory path to save the encrypt file]")
+		verify := fs.Bool("verify", false, "[Declare passprhase to verify encrypted file]")
 
 		fs.Parse(flag.Args()[1:])
 
-		gpgutils.DecFile(fileToDecrypt, secretKeyring, fileOutputDir)
+		if *verify {
+			for passphrase == "" {
+				fmt.Print("Digite a passphrase: ")
+				fmt.Scanln(&passphrase)
+			}
+			err := gpgutils.DecryptVerifyMessageArmored(publicKey, secretKey, passphrase, fileToDecrypt)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		} else {
+			err := gpgutils.DecryptMessageArmored(secretKey, filePath, passphrase)
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+		}
 
 	case flag.Arg(0) == "keygen":
 
@@ -204,7 +249,8 @@ Por favor especifique por quanto tempo a chave deve ser válida.
 			}
 		}
 
-		if err := gpgutils.KeyPairWriter(filePath, name, comment, email, passphrase, &expirationTime, keySize); err != nil {
+		err := gpgutils.KeyPairWriter(filePath, name, comment, email, passphrase, &expirationTime, keySize)
+		if err != nil {
 			log.Fatal(err)
 		}
 
@@ -255,8 +301,8 @@ func validMailAddress(address string) bool {
 func usage() {
 	fmt.Println()
 	fmt.Println("Available flags before subcommands encrypt or decrypt:")
-	fmt.Println("  -secretKeyring string: specify secretKeyring")
-	fmt.Println("  -publicKeyring string: specify publicKeyring")
+	fmt.Println("  -secretKey string: specify secretKey")
+	fmt.Println("  -publicKey string: specify publicKey")
 	fmt.Println()
 	fmt.Println("Available flags after subcommand encrypt:")
 	fmt.Println("  -file string: specify file to encrypting process")
@@ -269,14 +315,6 @@ func usage() {
 	fmt.Println("  -expiration string: Define if keys expiration time is on")
 	fmt.Println()
 }
-
-// Inicio do TESTE
-// Instalação do GPG4Win para cripotagria com GnuPG no Windows
-// Uso de KLEOPATRA
-// Criação do certificado com o par de chaves que estão na raiz deste diretório
-// Logica bem simplista para ver a chave publica sendo utilizada para criptografar uma mensagem qualquer
-// Logica bem simplista para ver a chave privada sendo utilizada para DEScriptografar uma mensagem qualquer criptografada
-// FIM
 
 // fmt.Println(`Supported algorithms:
 // Pubkey: RSA, ELG, DSA, ECDH, ECDSA, EDDSA
