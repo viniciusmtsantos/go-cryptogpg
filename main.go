@@ -16,11 +16,11 @@ import (
 
 const (
 	// 	prefix      = "keys"
-	pubkey = "keys/testando-com-pass_public.asc"
-	// 	privkey     = "keys_SECRET.asc"
+	pubkey   = "keys/testando-com-pass_public.asc"
+	privkey  = "keys/testando-com-pass_SECRET.asc"
 	filePath = "file-tests/teste.txt"
 
-// 	encFilePath = "file-tests/teste.txt.gpg"
+	encFilePath = "file-tests/teste.txt.gpg"
 
 // name       = "teste da silva"
 // comment    = "comentario do teste"
@@ -30,12 +30,13 @@ const (
 )
 
 func main() {
+	// gpgutils.CompararHash("file-tests/teste.txt", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 	// gpgutils.KeyPairWriter(prefix, name, comment, email, passphrase, nil, keySize)
 	// err := gpgutils.EncryptMessageArmored(pubkey, filePath)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
-	// gpgutils.DecryptMessageArmored(privkey, encFilePath, "teste")
+	err := gpgutils.DecryptMessageArmored(privkey, encFilePath, "teste123")
+	if err != nil {
+		fmt.Println(err)
+	}
 	// gpgutils.EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath)
 	// err := gpgutils.DecryptVerifyMessageArmored(pubkey, privkey, passphrase, encFilePath)
 	// os.Exit(1)
