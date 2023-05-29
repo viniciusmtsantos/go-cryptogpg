@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ProtonMail/gopenpgp/v2/helper"
 )
@@ -42,7 +43,7 @@ func DecryptMessageArmored(key, filePath, passphrase string) error {
 	}
 
 	// Escrita da chave pública em um arquivo
-	decryptedFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "decriptado.txt"))
+	decryptedFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "decript_"+strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))))
 	if err != nil {
 		return err
 	}

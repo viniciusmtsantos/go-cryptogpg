@@ -12,15 +12,13 @@ import (
 	"time"
 
 	"gocryptopgp/pkg/gpgutils"
+	"gocryptopgp/pkg/hashutils"
 )
 
 const (
 	// 	prefix      = "keys"
-	pubkey   = "keys/testando-com-pass_public.asc"
-	privkey  = "keys/testando-com-pass_SECRET.asc"
-	filePath = "file-tests/teste.txt"
-
-	encFilePath = "file-tests/teste.txt.gpg"
+	pubkey  = "keys/testando-com-pass_public.asc"
+	privkey = "keys/testando-com-pass_SECRET.asc"
 
 // name       = "teste da silva"
 // comment    = "comentario do teste"
@@ -30,16 +28,19 @@ const (
 )
 
 func main() {
-	// gpgutils.CompararHash("file-tests/teste.txt", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-	// gpgutils.KeyPairWriter(prefix, name, comment, email, passphrase, nil, keySize)
-	// err := gpgutils.EncryptMessageArmored(pubkey, filePath)
-	err := gpgutils.DecryptMessageArmored(privkey, encFilePath, "teste123")
+	err := gpgutils.EncryptMessageArmored(pubkey, "file-tests/teste.txt")
 	if err != nil {
 		fmt.Println(err)
 	}
+	err = gpgutils.DecryptMessageArmored(privkey, "file-tests/teste.txt.gpg", "teste123")
+	if err != nil {
+		fmt.Println(err)
+	}
+	hashutils.OpenAndCompareHashFiles("file-tests/teste.txt.gpg", "file-tests/teste.txt")
+	os.Exit(1)
+	// gpgutils.KeyPairWriter(prefix, name, comment, email, passphrase, nil, keySize)
 	// gpgutils.EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath)
 	// err := gpgutils.DecryptVerifyMessageArmored(pubkey, privkey, passphrase, encFilePath)
-	// os.Exit(1)
 
 	var (
 		filePath        string

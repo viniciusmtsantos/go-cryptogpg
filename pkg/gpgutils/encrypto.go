@@ -33,17 +33,18 @@ func EncryptMessageArmored(key, filePath string) error {
 	if err != nil {
 		return err
 	}
-	fileStringContent := string(fileBytesContent)
 
-	armor, err := helper.EncryptMessageArmored(keyStringContent, fileStringContent)
-	if err != nil {
-		return err
-	}
+	// fileStringContent := string(fileBytesContent)
 
-	// armor, err := helper.EncryptBinaryMessageArmored(keyStringContent, fileBytesContent)
+	// armor, err := helper.EncryptMessageArmored(keyStringContent, fileStringContent)
 	// if err != nil {
 	// 	return err
 	// }
+
+	armor, err := helper.EncryptBinaryMessageArmored(keyStringContent, fileBytesContent)
+	if err != nil {
+		return err
+	}
 
 	// Escrita da chave pública em um arquivo
 	encryptedFile, err := os.Create(filePath + ".gpg")
