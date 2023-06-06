@@ -8,7 +8,9 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/helper"
 )
 
-func EncryptMessageArmored(key, filePath string) error {
+var encryptedFile *os.File
+
+func EncryptMessageArmored(key, fileIn, fileOut string) error {
 	keyFile, err := os.Open(key)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
@@ -22,7 +24,7 @@ func EncryptMessageArmored(key, filePath string) error {
 	}
 	keyStringContent := string(keyBytesContent)
 
-	fileToEncrypt, err := os.Open(filePath)
+	fileToEncrypt, err := os.Open(fileIn)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
 		return err
@@ -46,10 +48,16 @@ func EncryptMessageArmored(key, filePath string) error {
 		return err
 	}
 
-	// Escrita da chave pública em um arquivo
-	encryptedFile, err := os.Create(filePath + ".gpg")
-	if err != nil {
-		return err
+	if fileOut == "" {
+		encryptedFile, err = os.Create(fileIn + ".gpg")
+		if err != nil {
+			return err
+		}
+	} else {
+		encryptedFile, err = os.Create(fileOut)
+		if err != nil {
+			return err
+		}
 	}
 	defer encryptedFile.Close()
 
@@ -63,7 +71,7 @@ func EncryptMessageArmored(key, filePath string) error {
 	return nil
 }
 
-func EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath string) error {
+func EncryptSignMessageArmored(pubkey, privkey, passphrase, fileIn, fileOut string) error {
 	pubKeyFile, err := os.Open(pubkey)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
@@ -90,7 +98,7 @@ func EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath string) err
 	}
 	privKeyStringContent := string(keyBytesContent)
 
-	fileToEncrypt, err := os.Open(filePath)
+	fileToEncrypt, err := os.Open(fileIn)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
 		return err
@@ -108,10 +116,16 @@ func EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath string) err
 		return err
 	}
 
-	// Escrita da chave pública em um arquivo
-	encryptedFile, err := os.Create(filePath + ".gpg")
-	if err != nil {
-		return err
+	if fileOut == "" {
+		encryptedFile, err = os.Create(fileIn + ".gpg")
+		if err != nil {
+			return err
+		}
+	} else {
+		encryptedFile, err = os.Create(fileOut + ".gpg")
+		if err != nil {
+			return err
+		}
 	}
 	defer encryptedFile.Close()
 

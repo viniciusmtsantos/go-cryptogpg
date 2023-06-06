@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"gocryptopgp/pkg/gpgutils"
-	"gocryptopgp/pkg/hashutils"
 )
 
 const (
@@ -28,16 +27,16 @@ const (
 )
 
 func main() {
-	err := gpgutils.EncryptMessageArmored(pubkey, "file-tests/teste.txt")
-	if err != nil {
-		fmt.Println(err)
-	}
-	err = gpgutils.DecryptMessageArmored(privkey, "file-tests/teste.txt.gpg", "teste123")
-	if err != nil {
-		fmt.Println(err)
-	}
-	hashutils.OpenAndCompareHashFiles("file-tests/teste.txt.gpg", "file-tests/teste.txt")
-	os.Exit(1)
+	// err := gpgutils.EncryptMessageArmored(pubkey, "file-tests/teste.txt")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// err = gpgutils.DecryptMessageArmored(privkey, "file-tests/teste.txt.gpg", "teste123")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// hashutils.OpenAndCompareHashFiles("file-tests/teste.txt.gpg", "file-tests/teste.txt")
+	// os.Exit(1)
 	// gpgutils.KeyPairWriter(prefix, name, comment, email, passphrase, nil, keySize)
 	// gpgutils.EncryptSignMessageArmored(pubkey, privkey, passphrase, filePath)
 	// err := gpgutils.DecryptVerifyMessageArmored(pubkey, privkey, passphrase, encFilePath)
@@ -53,10 +52,10 @@ func main() {
 		expirationTime  time.Time
 	)
 
-	var secretKey, publicKey, keyOutputDir, fileToEncrypt, fileToDecrypt string
+	var secretKey, publicKey, keyOut, fileIn, fileOut string
 	// flags da aplicação
-	flag.StringVar(&secretKey, "secretKey", "", "[Directory path of private key]")
-	flag.StringVar(&publicKey, "publicKey", "", "[Directory path to public key]")
+	flag.StringVar(&secretKey, "secretKey", "", "[Directory name of private key]")
+	flag.StringVar(&publicKey, "publicKey", "", "[Directory name to public key]")
 
 	flag.Parse()
 
@@ -78,8 +77,9 @@ func main() {
 
 		fs := flag.NewFlagSet("encrypt [flags]", flag.ExitOnError)
 
-		fs.StringVar(&fileToEncrypt, "file", "", "[File path to encrypt]")
-		sygn := fs.Bool("sygn", false, "[Declare passprhase to sygn encrypted file]")
+		fs.StringVar(&fileIn, "fileIn", "", "[Input file to encrypt]")
+		fs.StringVar(&fileOut, "fileOut", "", "[Output encrypted file]")
+		sygn := fs.Bool("sign", false, "[Declare passphrase to sygn encrypted file]")
 
 		fs.Parse(flag.Args()[1:])
 
@@ -96,13 +96,13 @@ func main() {
 				fmt.Scanln(&passphrase)
 			}
 
-			err := gpgutils.EncryptSignMessageArmored(publicKey, secretKey, passphrase, fileToEncrypt)
+			err := gpgutils.EncryptSignMessageArmored(publicKey, secretKey, passphrase, fileIn, fileOut)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
 
 		} else {
-			err := gpgutils.EncryptMessageArmored(publicKey, fileToEncrypt)
+			err := gpgutils.EncryptMessageArmored(publicKey, fileIn, fileOut)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -118,8 +118,9 @@ func main() {
 
 		fs := flag.NewFlagSet("decrypt [flags]", flag.ExitOnError)
 
-		fs.StringVar(&fileToDecrypt, "file", "", "[File path to decrypt]")
-		verify := fs.Bool("verify", false, "[Declare passprhase to verify encrypted file]")
+		fs.StringVar(&fileIn, "fileIn", "", "[Input file to decrypt]")
+		fs.StringVar(&fileOut, "fileOut", "", "[Output decrypted file]")
+		verify := fs.Bool("verify", false, "[Declare passphrase to verify encrypted file]")
 
 		fs.Parse(flag.Args()[1:])
 
@@ -135,14 +136,15 @@ func main() {
 				fmt.Print("Passphrase: ")
 				fmt.Scanln(&passphrase)
 			}
-			err := gpgutils.DecryptVerifyMessageArmored(publicKey, secretKey, passphrase, fileToDecrypt)
+			err := gpgutils.DecryptVerifyMessageArmored(publicKey, secretKey, passphrase, fileIn, fileOut)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
+
 		} else {
 			fmt.Print("Passphrase (''): ")
 			fmt.Scanln(&passphrase)
-			err := gpgutils.DecryptMessageArmored(secretKey, fileToDecrypt, passphrase)
+			err := gpgutils.DecryptMessageArmored(secretKey, fileIn, passphrase, fileOut)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -152,9 +154,9 @@ func main() {
 
 		fs := flag.NewFlagSet("keygen [Generates a new public/private key pair]", flag.ExitOnError)
 
-		fs.StringVar(&keyOutputDir, "d", "./keys", "[Output directory of key files]")
-		pass := fs.Bool("passphrase", false, "[Define if passphrase is on]")
-		expTime := fs.Bool("expiration", false, "[Define if keys expiration time is on]")
+		fs.StringVar(&keyOut, "d", "./keys", "[Output directory of key files]")
+		pass := fs.Bool("passphrase", false, "[Define passphrase]")
+		expTime := fs.Bool("expiration", false, "[Define key expiration time]")
 
 		fs.Parse(flag.Args()[1:])
 
@@ -163,10 +165,10 @@ func main() {
 		fmt.Println("")
 
 		// Solicitar o caminho do arquivo para salvar a chave
-		fmt.Print("Diretório e Prefixo das chaves ('./key-defaultname'): ")
+		fmt.Print("Diretório e Prefixo das chaves ('./default-key'): ")
 		fmt.Scanln(&filePath)
 		if filePath == "" {
-			filePath = "./key-defaultname"
+			filePath = "./default-key"
 		}
 
 		reader := bufio.NewReader(os.Stdin)

@@ -10,7 +10,9 @@ import (
 	"github.com/ProtonMail/gopenpgp/v2/helper"
 )
 
-func DecryptMessageArmored(key, filePath, passphrase string) error {
+var decryptedFile *os.File
+
+func DecryptMessageArmored(key, fileIn, passphrase, fileOut string) error {
 	keyFile, err := os.Open(key)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
@@ -24,7 +26,7 @@ func DecryptMessageArmored(key, filePath, passphrase string) error {
 	}
 	keyStringContent := string(keyBytesContent)
 
-	fileToEncrypt, err := os.Open(filePath)
+	fileToEncrypt, err := os.Open(fileIn)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
 		return err
@@ -42,8 +44,11 @@ func DecryptMessageArmored(key, filePath, passphrase string) error {
 		return err
 	}
 
-	// Escrita da chave pública em um arquivo
-	decryptedFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "decript_"+strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))))
+	if fileOut == "" {
+		fileOut = filepath.Join(filepath.Dir(fileOut), "decript_"+strings.TrimSuffix(filepath.Base(fileIn), filepath.Ext(fileIn)))
+	}
+
+	decryptedFile, err = os.Create(fileOut)
 	if err != nil {
 		return err
 	}
@@ -59,7 +64,7 @@ func DecryptMessageArmored(key, filePath, passphrase string) error {
 	return nil
 }
 
-func DecryptVerifyMessageArmored(pubkey, privkey, passphrase, filePath string) error {
+func DecryptVerifyMessageArmored(pubkey, privkey, passphrase, fileIn, fileOut string) error {
 	pubKeyFile, err := os.Open(pubkey)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
@@ -86,7 +91,7 @@ func DecryptVerifyMessageArmored(pubkey, privkey, passphrase, filePath string) e
 	}
 	privKeyStringContent := string(keyBytesContent)
 
-	fileToEncrypt, err := os.Open(filePath)
+	fileToEncrypt, err := os.Open(fileIn)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
 		return err
@@ -104,8 +109,11 @@ func DecryptVerifyMessageArmored(pubkey, privkey, passphrase, filePath string) e
 		return err
 	}
 
-	// Escrita da chave pública em um arquivo
-	decryptedFile, err := os.Create(filepath.Join(filepath.Dir(filePath), "decriptado.txt"))
+	if fileOut == "" {
+		fileOut = filepath.Join(filepath.Dir(fileOut), "decript_"+strings.TrimSuffix(filepath.Base(fileIn), filepath.Ext(fileIn)))
+	}
+
+	decryptedFile, err = os.Create(fileOut)
 	if err != nil {
 		return err
 	}
