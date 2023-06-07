@@ -48,13 +48,14 @@ func main() {
 		email           string
 		keySize         int
 		passphrase      string
+		newPassphrase   string
 		expirationInput string
 		expirationTime  time.Time
 	)
 
-	var secretKey, publicKey, keyOut, fileIn, fileOut string
+	var privateKey, publicKey, keyOut, fileIn, fileOut string
 	// flags da aplicação
-	flag.StringVar(&secretKey, "secretKey", "", "[Directory name of private key]")
+	flag.StringVar(&privateKey, "privateKey", "", "[Directory name of private key]")
 	flag.StringVar(&publicKey, "publicKey", "", "[Directory name to public key]")
 
 	flag.Parse()
@@ -85,8 +86,8 @@ func main() {
 
 		if *sygn {
 
-			if secretKey == "" {
-				fmt.Println("Error: -secretKey is required")
+			if privateKey == "" {
+				fmt.Println("Error: -privateKey is required")
 				usage()
 				return
 			}
@@ -96,7 +97,7 @@ func main() {
 				fmt.Scanln(&passphrase)
 			}
 
-			err := gpgutils.EncryptSignMessageArmored(publicKey, secretKey, passphrase, fileIn, fileOut)
+			err := gpgutils.EncryptSignMessageArmored(publicKey, privateKey, passphrase, fileIn, fileOut)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -110,8 +111,8 @@ func main() {
 
 	case flag.Arg(0) == "decrypt":
 
-		if secretKey == "" {
-			fmt.Println("Error: -secretKey is required")
+		if privateKey == "" {
+			fmt.Println("Error: -privateKey is required")
 			usage()
 			return
 		}
@@ -136,7 +137,7 @@ func main() {
 				fmt.Print("Passphrase: ")
 				fmt.Scanln(&passphrase)
 			}
-			err := gpgutils.DecryptVerifyMessageArmored(publicKey, secretKey, passphrase, fileIn, fileOut)
+			err := gpgutils.DecryptVerifyMessageArmored(publicKey, privateKey, passphrase, fileIn, fileOut)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -144,7 +145,7 @@ func main() {
 		} else {
 			fmt.Print("Passphrase (''): ")
 			fmt.Scanln(&passphrase)
-			err := gpgutils.DecryptMessageArmored(secretKey, fileIn, passphrase, fileOut)
+			err := gpgutils.DecryptMessageArmored(privateKey, fileIn, passphrase, fileOut)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -157,8 +158,36 @@ func main() {
 		fs.StringVar(&keyOut, "d", "./keys", "[Output directory of key files]")
 		pass := fs.Bool("passphrase", false, "[Define passphrase]")
 		expTime := fs.Bool("expiration", false, "[Define key expiration time]")
+		newPass := fs.Bool("newPassphrase", false, "[Define passphrase]")
+		verify := fs.Bool("verify", false, "[Define passphrase]")
 
 		fs.Parse(flag.Args()[1:])
+
+		if *verify {
+			err := gpgutils.VerifyKeyPair(publicKey, privateKey)
+			if err != nil {
+				log.Fatal(err)
+			}
+			os.Exit(1)
+		}
+
+		if *newPass {
+			if privateKey == "" {
+				fmt.Println("Error: -privateKey is required")
+				usage()
+				return
+			}
+
+			fmt.Print("Old Passphrase: ")
+			fmt.Scanln(&passphrase)
+			fmt.Print("New Passphrase: ")
+			fmt.Scanln(&newPassphrase)
+			err := gpgutils.UpdatePrivateKeyPassphrase(privateKey, passphrase, newPassphrase)
+			if err != nil {
+				log.Fatal(err)
+			}
+			os.Exit(1)
+		}
 
 		fmt.Println("gpg (STCP GPG) 1.0.0; Copyright (C) 2023")
 		fmt.Println("STCP GPG needs to construct a user ID to identify your key.")
@@ -323,7 +352,7 @@ func validMailAddress(address string) bool {
 func usage() {
 	fmt.Println()
 	fmt.Println("Available flags before subcommands encrypt or decrypt:")
-	fmt.Println("  -secretKey string: specify secretKey")
+	fmt.Println("  -privateKey string: specify privateKey")
 	fmt.Println("  -publicKey string: specify publicKey")
 	fmt.Println()
 	fmt.Println("Available flags after subcommand encrypt:")

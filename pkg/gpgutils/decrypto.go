@@ -13,6 +13,10 @@ import (
 var decryptedFile *os.File
 
 func DecryptMessageArmored(key, fileIn, passphrase, fileOut string) error {
+	if _, err := os.Stat(key); os.IsNotExist(err) {
+		return fmt.Errorf("chave privada não encontrada")
+	}
+
 	keyFile, err := os.Open(key)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
@@ -65,6 +69,14 @@ func DecryptMessageArmored(key, fileIn, passphrase, fileOut string) error {
 }
 
 func DecryptVerifyMessageArmored(pubkey, privkey, passphrase, fileIn, fileOut string) error {
+	if _, err := os.Stat(pubkey); os.IsNotExist(err) {
+		return fmt.Errorf("chave pública não encontrada")
+	}
+
+	if _, err := os.Stat(privkey); os.IsNotExist(err) {
+		return fmt.Errorf("chave privada não encontrada")
+	}
+
 	pubKeyFile, err := os.Open(pubkey)
 	if err != nil {
 		fmt.Printf("failed reading file: %s", err)
