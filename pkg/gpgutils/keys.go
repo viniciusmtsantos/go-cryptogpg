@@ -200,7 +200,7 @@ func VerifyKeyPair(publicKeyPath, privateKeyPath string) error {
 
 	isValid := pubKey.CanSign() && privKey.Encrypted
 
-	fmt.Printf("Certificados:\n")
+	fmt.Printf("Detalhes do Certificado:\n")
 
 	fmt.Printf(" - User ID: %v\n", userId)
 	fmt.Printf(" - ID da Chave: %v\n", idKeyString)
