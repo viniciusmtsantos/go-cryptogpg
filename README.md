@@ -1,6 +1,5 @@
 ## Golang PGP Key Creation and File Encryption/Decryption
 
-Descrição:
 Este repositório contém um conjunto de utilitários escritos em Go (Golang) para facilitar a criação de chaves PGP (Pretty Good Privacy) e a realização de operações de criptografia e descriptografia de arquivos.
 
 Recursos:
@@ -17,7 +16,4 @@ Instruções de Uso:
 4. Siga as instruções fornecidas nos arquivos de exemplo para criar suas chaves PGP e realizar operações de criptografia/descriptografia de arquivos.
 
 Este repositório é uma ferramenta útil para qualquer pessoa interessada em trabalhar com criptografia de arquivos usando a tecnologia PGP. Sinta-se à vontade para contribuir, fazer sugestões ou relatar problemas por meio de pull requests e issues.
-
-Aviso Legal:
-Lembre-se de sempre respeitar as leis locais ao utilizar este software. O autor não se responsabiliza pelo uso indevido ou ilegal das ferramentas fornecidas neste repositório.
 
