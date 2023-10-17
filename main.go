@@ -189,8 +189,8 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Println("gpg (STCP GPG) 1.0.0; Copyright (C) 2023")
-		fmt.Println("STCP GPG needs to construct a user ID to identify your key.")
+		fmt.Println("gpg (Test GPG) 1.0.0; Copyright (C) 2023")
+		fmt.Println("Test GPG needs to construct a user ID to identify your key.")
 		fmt.Println("")
 
 		// Solicitar o caminho do arquivo para salvar a chave
